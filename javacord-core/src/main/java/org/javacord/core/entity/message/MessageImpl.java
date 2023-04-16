@@ -7,6 +7,7 @@ import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.emoji.CustomEmoji;
 import org.javacord.api.entity.emoji.Emoji;
 import org.javacord.api.entity.intent.Intent;
+import org.javacord.api.entity.message.CountDetails;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageActivity;
 import org.javacord.api.entity.message.MessageAttachment;
@@ -35,6 +36,7 @@ import org.javacord.core.interaction.MessageInteractionImpl;
 import org.javacord.core.listener.message.InternalMessageAttachableListenerManager;
 import org.javacord.core.util.cache.MessageCacheImpl;
 
+import java.awt.Color;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -403,12 +405,14 @@ public class MessageImpl implements Message, InternalMessageAttachableListenerMa
      *
      * @param emoji The emoji.
      * @param you   Whether this reaction is used by you or not.
+     * @param burstColors The HEX colors used for super reactions.
+     * @param countDetails The details about the count of reactions.
      */
-    public void addReaction(Emoji emoji, boolean you) {
+    public void addReaction(Emoji emoji, boolean you, CountDetails countDetails, List<Color> burstColors) {
         Optional<Reaction> reaction = reactions.stream().filter(r -> emoji.equalsEmoji(r.getEmoji())).findAny();
         reaction.ifPresent(r -> ((ReactionImpl) r).incrementCount(you));
         if (!reaction.isPresent()) {
-            reactions.add(new ReactionImpl(this, emoji, 1, you));
+            reactions.add(new ReactionImpl(this, emoji, 1, you, countDetails, burstColors));
         }
     }
 
@@ -417,10 +421,12 @@ public class MessageImpl implements Message, InternalMessageAttachableListenerMa
      *
      * @param emoji The emoji.
      * @param you   Whether this reaction is used by you or not.
+     * @param countDetails The details about the count of reactions.
      */
-    public void removeReaction(Emoji emoji, boolean you) {
+    public void removeReaction(Emoji emoji, boolean you, CountDetails countDetails) {
         Optional<Reaction> reaction = reactions.stream().filter(r -> emoji.equalsEmoji(r.getEmoji())).findAny();
         reaction.ifPresent(r -> ((ReactionImpl) r).decrementCount(you));
+        reaction.ifPresent(r -> ((ReactionImpl) r).setCountDetails(countDetails));
         reactions.removeIf(r -> r.getCount() <= 0);
     }
 

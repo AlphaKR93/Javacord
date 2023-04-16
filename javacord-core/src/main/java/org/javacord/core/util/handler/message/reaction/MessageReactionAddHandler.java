@@ -5,11 +5,14 @@ import org.apache.logging.log4j.Logger;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.emoji.Emoji;
+import org.javacord.api.entity.message.CountDetails;
 import org.javacord.api.entity.message.Message;
+import org.javacord.api.entity.message.Reaction;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.reaction.ReactionAddEvent;
 import org.javacord.core.entity.channel.PrivateChannelImpl;
 import org.javacord.core.entity.emoji.UnicodeEmojiImpl;
+import org.javacord.core.entity.message.CountDetailsImpl;
 import org.javacord.core.entity.message.MessageImpl;
 import org.javacord.core.entity.server.ServerImpl;
 import org.javacord.core.entity.user.Member;
@@ -19,7 +22,11 @@ import org.javacord.core.util.event.DispatchQueueSelector;
 import org.javacord.core.util.gateway.PacketHandler;
 import org.javacord.core.util.logging.LoggerUtil;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Handles the message reaction add packet.
@@ -75,7 +82,42 @@ public class MessageReactionAddHandler extends PacketHandler {
             emoji = api.getKnownCustomEmojiOrCreateCustomEmoji(emojiJson);
         }
 
-        message.ifPresent(msg -> ((MessageImpl) msg).addReaction(emoji, userId == api.getYourself().getId()));
+        AtomicReference<CountDetails> atCountDetails = new AtomicReference<>();
+        
+        message.ifPresent((m) -> {
+            Optional<Reaction> reaction = m.getReactions().stream()
+                    .filter(r -> emoji.equalsEmoji(r.getEmoji())).findAny();
+
+            reaction.ifPresent((r) -> {
+                atCountDetails.set(r.getCountDetails());
+            });
+        });
+
+        boolean isSuperReaction = packet.get("burst").asBoolean();
+
+        CountDetails countDetails = atCountDetails.get();
+        if (countDetails != null) {
+            if (isSuperReaction) {
+                ((CountDetailsImpl) countDetails).incrementBurstCount();
+            } else {
+                ((CountDetailsImpl) countDetails).incrementNormalCount();
+            }
+        } else {
+            countDetails = isSuperReaction ? new CountDetailsImpl(1, 0)
+                    : new CountDetailsImpl(0, 1);
+        }
+
+        List<Color> burstColors = new ArrayList<>();
+
+        if (packet.has("burst_colors")) {
+            for (JsonNode color : packet.get("burst_colors")) {
+                burstColors.add(Color.decode(color.asText()));
+            }
+        }
+
+        CountDetails finalCountDetails = countDetails;
+        message.ifPresent(msg -> ((MessageImpl) msg).addReaction(emoji, userId == api.getYourself().getId(),
+                finalCountDetails, burstColors));
 
         ReactionAddEvent event = new ReactionAddEventImpl(api, messageId, channel, emoji, userId, member);
 
