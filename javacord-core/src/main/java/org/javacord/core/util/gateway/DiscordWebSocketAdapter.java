@@ -2,6 +2,7 @@ package org.javacord.core.util.gateway;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.neovisionaries.ws.client.ProxySettings;
@@ -15,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.javacord.api.Javacord;
 import org.javacord.api.entity.Nameable;
 import org.javacord.api.entity.activity.Activity;
+import org.javacord.api.entity.activity.ActivityType;
 import org.javacord.api.entity.channel.ServerVoiceChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.server.Server;
@@ -746,6 +748,31 @@ public class DiscordWebSocketAdapter extends WebSocketAdapter {
                 .put("browser", "Javacord")
                 .put("device", "Javacord");
 
+        ObjectNode presence = JsonNodeFactory.instance.objectNode();
+
+        if (api.getActivity().isPresent()) {
+            ArrayNode activitiesPayload = JsonNodeFactory.instance.arrayNode();
+            ObjectNode activitiesPayloadArray = JsonNodeFactory.instance.objectNode();
+            ActivityType activityType = api.getActivity().get().getType();
+            if (activityType == ActivityType.CUSTOM) {
+                activitiesPayloadArray.put("name", "Custom Status");
+                activitiesPayloadArray.put("state", api.getActivity().get().getName());
+            } else {
+                activitiesPayloadArray.put("name", api.getActivity().get().getName());
+                Optional<String> state = api.getActivity().get().getState();
+                state.ifPresent(s -> activitiesPayloadArray.put("state", s));
+            }
+
+            activitiesPayloadArray.put("type", activityType.getId());
+            activitiesPayloadArray.put("url", api.getActivity().get().getStreamingUrl().orElse(null));
+
+
+            activitiesPayload.add(activitiesPayloadArray);
+
+            presence.set("activities", activitiesPayload);
+        }
+
+        data.set("presence", presence);
         data.put("intents", Intent.calculateBitmask(api.getIntents().toArray(new Intent[0])));
 
         if (api.getTotalShards() > 1) {
@@ -939,6 +966,7 @@ public class DiscordWebSocketAdapter extends WebSocketAdapter {
                 return Optional.of(type);
             }
         }).orElse(0));
+        activityJson.put("state", activity.flatMap(Activity::getState).orElse(null));
         activity.flatMap(Activity::getStreamingUrl).ifPresent(url -> activityJson.put("url", url));
         logger.debug("Updating status (content: {})", updateStatus);
         sendTextFrame(updateStatus.toString());

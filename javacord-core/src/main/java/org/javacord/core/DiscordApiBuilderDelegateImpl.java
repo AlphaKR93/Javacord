@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.logging.log4j.CloseableThreadContext;
 import org.apache.logging.log4j.Logger;
 import org.javacord.api.DiscordApi;
+import org.javacord.api.entity.activity.Activity;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.internal.DiscordApiBuilderDelegate;
 import org.javacord.api.listener.GloballyAttachableListener;
@@ -182,6 +183,11 @@ public class DiscordApiBuilderDelegateImpl implements DiscordApiBuilderDelegate 
      */
     private volatile List<Function<DiscordApi,GloballyAttachableListener>> preparedUnspecifiedListeners;
 
+    /**
+     * The bots activity.
+     */
+    private volatile Activity activity = null;
+
 
     @Override
     public CompletableFuture<DiscordApi> login() {
@@ -197,7 +203,8 @@ public class DiscordApiBuilderDelegateImpl implements DiscordApiBuilderDelegate 
             new DiscordApiImpl(token, currentShard.get(), totalShards.get(), intents,
                     waitForServersOnStartup, waitForUsersOnStartup, registerShutdownHook, globalRatelimiter,
                     gatewayIdentifyRatelimiter, proxySelector, proxy, proxyAuthenticator, trustAllCertificates,
-                    future, null, preparedListeners, preparedUnspecifiedListeners, userCacheEnabled, dispatchEvents);
+                    future, null, preparedListeners, preparedUnspecifiedListeners, userCacheEnabled, dispatchEvents,
+                    activity);
         }
         return future;
     }
@@ -317,8 +324,18 @@ public class DiscordApiBuilderDelegateImpl implements DiscordApiBuilderDelegate 
     }
 
     @Override
+    public void setActivity(Activity activity) {
+        this.activity = activity;
+    }
+
+    @Override
     public Optional<String> getToken() {
         return Optional.ofNullable(token);
+    }
+
+    @Override
+    public Optional<Activity> getActivity() {
+        return Optional.ofNullable(activity);
     }
 
     @Override
@@ -424,7 +441,7 @@ public class DiscordApiBuilderDelegateImpl implements DiscordApiBuilderDelegate 
     private void setRecommendedTotalShards(CompletableFuture<Void> future) {
         DiscordApiImpl api = new DiscordApiImpl(
                 token, globalRatelimiter, gatewayIdentifyRatelimiter, proxySelector, proxy, proxyAuthenticator,
-                trustAllCertificates);
+                trustAllCertificates, activity);
         RestRequest<JsonNode> botGatewayRequest = new RestRequest<>(api, RestMethod.GET, RestEndpoint.GATEWAY_BOT);
         botGatewayRequest
                 .execute(RestRequestResult::getJsonBody)

@@ -2,6 +2,7 @@ package org.javacord.api.internal;
 
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.activity.Activity;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.listener.GloballyAttachableListener;
 import org.javacord.api.util.auth.Authenticator;
@@ -80,11 +81,25 @@ public interface DiscordApiBuilderDelegate {
     void setToken(String token);
 
     /**
+     * Sets the activity of the bot.
+     *
+     * @param activity The activity to set.
+     */
+    void setActivity(Activity activity);
+
+    /**
      * Gets the token.
      *
      * @return The token.
      */
     Optional<String> getToken();
+
+    /**
+     * Gets the activity of the bot.
+     *
+     * @return The activity of the bot.
+     */
+    Optional<Activity> getActivity();
 
     /**
      * Sets the total shards.
