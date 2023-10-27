@@ -406,12 +406,18 @@ public class MessageImpl implements Message, InternalMessageAttachableListenerMa
      * @param emoji The emoji.
      * @param you   Whether this reaction is used by you or not.
      * @param burstColors The HEX colors used for super reactions.
-     * @param countDetails The details about the count of reactions.
+     * @param isSuperReaction Whether this reaction is a super reaction or not.
      */
-    public void addReaction(Emoji emoji, boolean you, CountDetails countDetails, List<Color> burstColors) {
+    public void addReaction(Emoji emoji, boolean you, boolean isSuperReaction, List<Color> burstColors) {
         Optional<Reaction> reaction = reactions.stream().filter(r -> emoji.equalsEmoji(r.getEmoji())).findAny();
         reaction.ifPresent(r -> ((ReactionImpl) r).incrementCount(you));
+        reaction.ifPresent(r ->  {
+            CountDetailsImpl countDetails = (CountDetailsImpl) r.getCountDetails();
+            r.getCountDetails().incrementCount(isSuperReaction);
+            ((ReactionImpl) r).setCountDetails(countDetails);
+        });
         if (!reaction.isPresent()) {
+            CountDetails countDetails = new CountDetailsImpl(isSuperReaction);
             reactions.add(new ReactionImpl(this, emoji, 1, you, countDetails, burstColors));
         }
     }
@@ -421,12 +427,16 @@ public class MessageImpl implements Message, InternalMessageAttachableListenerMa
      *
      * @param emoji The emoji.
      * @param you   Whether this reaction is used by you or not.
-     * @param countDetails The details about the count of reactions.
+     * @param isSuperReaction Whether this reaction is a super reaction or not.
      */
-    public void removeReaction(Emoji emoji, boolean you, CountDetails countDetails) {
+    public void removeReaction(Emoji emoji, boolean you, boolean isSuperReaction) {
         Optional<Reaction> reaction = reactions.stream().filter(r -> emoji.equalsEmoji(r.getEmoji())).findAny();
         reaction.ifPresent(r -> ((ReactionImpl) r).decrementCount(you));
-        reaction.ifPresent(r -> ((ReactionImpl) r).setCountDetails(countDetails));
+        reaction.ifPresent(r ->  {
+            CountDetailsImpl countDetails = (CountDetailsImpl) r.getCountDetails();
+            r.getCountDetails().decrementCount(isSuperReaction);
+            ((ReactionImpl) r).setCountDetails(countDetails);
+        });
         reactions.removeIf(r -> r.getCount() <= 0);
     }
 

@@ -29,12 +29,14 @@ public class CountDetailsImpl implements CountDetails {
     /**
      * Creates a new count details object.
      *
-     * @param burstCount The count of super reactions.
-     * @param normalCount The count of normal reactions.
+     * @param isSuperReaction Whether the reaction is a super reaction.
      */
-    public CountDetailsImpl(int burstCount, int normalCount) {
-        this.burstCount.set(burstCount);
-        this.normalCount.set(normalCount);
+    public CountDetailsImpl(boolean isSuperReaction) {
+        if (isSuperReaction) {
+            this.burstCount.set(1);
+        } else {
+            this.normalCount.set(1);
+        }
     }
 
     @Override
@@ -46,6 +48,25 @@ public class CountDetailsImpl implements CountDetails {
     public int getNormalCount() {
         return normalCount.get();
     }
+
+    @Override
+    public void decrementCount(boolean isSuperReaction) {
+        if (isSuperReaction) {
+            decrementBurstCount();
+        } else {
+            decrementNormalCount();
+        }
+    }
+
+    @Override
+    public void incrementCount(boolean isSuperReaction) {
+        if (isSuperReaction) {
+            incrementBurstCount();
+        } else {
+            incrementNormalCount();
+        }
+    }
+
 
     /**
      * Increments the number of burst reactions.

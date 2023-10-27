@@ -15,4 +15,18 @@ public interface CountDetails {
      * @return The count of normal reactions.
      */
     int getNormalCount();
+
+    /**
+     * Decrements the count of the reaction.
+     *
+     * @param isSuperReaction Whether the reaction is a super reaction.
+     */
+    void decrementCount(boolean isSuperReaction);
+
+    /**
+     * Increments the count of the reaction.
+     *
+     * @param isSuperReaction Whether the reaction is a super reaction.
+     */
+    void incrementCount(boolean isSuperReaction);
 }

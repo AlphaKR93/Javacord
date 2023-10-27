@@ -6,14 +6,11 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.ServerChannel;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.emoji.Emoji;
-import org.javacord.api.entity.message.CountDetails;
 import org.javacord.api.entity.message.Message;
-import org.javacord.api.entity.message.Reaction;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.message.reaction.ReactionRemoveEvent;
 import org.javacord.core.entity.channel.PrivateChannelImpl;
 import org.javacord.core.entity.emoji.UnicodeEmojiImpl;
-import org.javacord.core.entity.message.CountDetailsImpl;
 import org.javacord.core.entity.message.MessageImpl;
 import org.javacord.core.event.message.reaction.ReactionRemoveEventImpl;
 import org.javacord.core.util.event.DispatchQueueSelector;
@@ -21,7 +18,6 @@ import org.javacord.core.util.gateway.PacketHandler;
 import org.javacord.core.util.logging.LoggerUtil;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Handles the message reaction remove packet.
@@ -69,31 +65,10 @@ public class MessageReactionRemoveHandler extends PacketHandler {
             emoji = api.getKnownCustomEmojiOrCreateCustomEmoji(emojiJson);
         }
 
-        AtomicReference<CountDetails> atCountDetails = new AtomicReference<>();
-        message.ifPresent((m) -> {
-            Optional<Reaction> reaction = m.getReactions().stream()
-                    .filter(r -> emoji.equalsEmoji(r.getEmoji())).findAny();
-
-            reaction.ifPresent((r) -> {
-                atCountDetails.set(r.getCountDetails());
-            });
-        });
-
         boolean isSuperReaction = packet.get("burst").asBoolean();
 
-        CountDetails countDetails = atCountDetails.get();
-        if (countDetails != null) {
-            if (isSuperReaction) {
-                ((CountDetailsImpl) countDetails).decrementBurstCount();
-            } else {
-                ((CountDetailsImpl) countDetails).decrementNormalCount();
-            }
-        } else {
-            throw new NullPointerException("countDetails can not be null");
-        }
-
         message.ifPresent(msg -> ((MessageImpl) msg).removeReaction(emoji, userId == api.getYourself().getId(),
-                countDetails));
+                isSuperReaction));
 
         ReactionRemoveEvent event = new ReactionRemoveEventImpl(api, messageId, channel, emoji, userId);
 
