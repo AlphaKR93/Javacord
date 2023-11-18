@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * The implementation of {@link ServerThreadChannel}.
@@ -124,20 +125,14 @@ public class ServerThreadChannelImpl extends ServerChannelImpl implements Server
         totalNumberOfMessagesSent = data.path("total_message_sent").asInt(0);
 
         getParent().asServerForumChannel().ifPresent(forumChannel -> {
-            Set<ForumTag> allForumTags = forumChannel.getForumTags();
-
             List<Long> appliedTagIds = new ArrayList<>();
-            if (data.hasNonNull("applied_tags")) {
-                for (JsonNode appliedTag : data.get("applied_tags")) {
-                    appliedTagIds.add(appliedTag.asLong());
-                }
-            }
 
-            for (ForumTag forumTag : allForumTags) {
-                if (appliedTagIds.contains(forumTag.getId())) {
-                    forumTags.add(forumTag);
-                }
-            }
+            if (data.hasNonNull("applied_tags"))
+                data.get("applied_tags").forEach(appliedTag -> appliedTagIds.add(appliedTag.asLong()));
+
+            forumTags = forumChannel.getForumTags().stream()
+                    .filter(tag -> appliedTagIds.contains(tag.getId()))
+                    .collect(Collectors.toSet());
         });
     }
 
@@ -224,7 +219,7 @@ public class ServerThreadChannelImpl extends ServerChannelImpl implements Server
 
     @Override
     public Set<ForumTag> getForumTags() {
-        return forumTags;
+        return Collections.unmodifiableSet(forumTags);
     }
 
     /**

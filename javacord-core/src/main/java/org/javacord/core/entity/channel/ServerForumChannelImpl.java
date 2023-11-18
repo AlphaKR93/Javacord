@@ -15,11 +15,7 @@ import org.javacord.core.entity.channel.forum.ForumTagImpl;
 import org.javacord.core.entity.server.ServerImpl;
 import org.javacord.core.listener.channel.server.forum.InternalServerForumChannelAttachableListenerManager;
 
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -264,12 +260,12 @@ public class ServerForumChannelImpl extends RegularServerChannelImpl
 
     @Override
     public EnumSet<ChannelFlag> getFlags() {
-        return flags;
+        return EnumSet.copyOf(flags);
     }
 
     @Override
     public Set<ForumTag> getForumTags() {
-        return forumTags;
+        return Collections.unmodifiableSet(forumTags);
     }
 
     @Override
@@ -289,7 +285,7 @@ public class ServerForumChannelImpl extends RegularServerChannelImpl
 
     @Override
     public Optional<ChannelCategory> getCategory() {
-        return getApi().getChannelCategoryById(parentId);
+        return getServer().getChannelCategoryById(parentId);
     }
 
     @Override

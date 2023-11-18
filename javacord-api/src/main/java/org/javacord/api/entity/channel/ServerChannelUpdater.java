@@ -12,7 +12,7 @@ public class ServerChannelUpdater<T extends ServerChannelUpdater<T>> {
     /**
      * The server channel delegate used by this instance.
      */
-    private final ServerChannelUpdaterDelegate serverChannelUpdaterDelegate;
+    protected final ServerChannelUpdaterDelegate serverChannelUpdaterDelegate;
 
     /**
      * Creates a new server channel updater.

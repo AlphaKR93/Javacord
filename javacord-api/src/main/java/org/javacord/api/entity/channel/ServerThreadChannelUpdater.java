@@ -23,8 +23,8 @@ public class ServerThreadChannelUpdater extends ServerChannelUpdater<ServerThrea
      * @param thread The thread to update.
      */
     public ServerThreadChannelUpdater(ServerThreadChannel thread) {
-        super(thread);
-        delegate = DelegateFactory.createServerThreadChannelUpdaterDelegate(thread);
+        super(DelegateFactory.createServerThreadChannelUpdaterDelegate(thread));
+        delegate = (ServerThreadChannelUpdaterDelegate) super.serverChannelUpdaterDelegate;
     }
 
     /**

@@ -274,10 +274,10 @@ public class ServerForumChannelUpdaterDelegateImpl extends RegularServerChannelU
         if (modifyForumTags) {
             ArrayNode tagsArray = body.putArray("available_tags");
             for (ForumTag tag : forumTags) {
-                ArrayNode tagArray = JsonNodeFactory.instance.arrayNode();
-                tagArray.add(tag.getId());
-                tagArray.add(tag.getName());
-                tagArray.add(tag.isModerated());
+                ObjectNode tagArray = JsonNodeFactory.instance.objectNode();
+                tagArray.put("id", tag.getId());
+                tagArray.put("name", tag.getName());
+                tagArray.put("moderated", tag.isModerated());
                 tagsArray.add(tagArray);
             }
             body.set("available_tags", tagsArray);

@@ -1,7 +1,9 @@
 package org.javacord.core.entity.channel;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.javacord.api.entity.channel.AutoArchiveDuration;
+import org.javacord.api.entity.channel.ServerForumChannel;
 import org.javacord.api.entity.channel.ServerThreadChannel;
 import org.javacord.api.entity.channel.forum.ForumTag;
 import org.javacord.api.entity.channel.internal.ServerThreadChannelUpdaterDelegate;
@@ -80,11 +82,9 @@ public class ServerThreadChannelUpdaterDelegateImpl extends ServerChannelUpdater
 
     @Override
     public void setForumTags(Set<ForumTag> forumTags) {
-        channel.asServerForumChannel().ifPresent(serverForumChannel -> {
-            for (ForumTag tag : forumTags) {
-                if (!serverForumChannel.getForumTags().contains(tag)) {
-                    throw new IllegalArgumentException("The tag " + tag.getName() + " is not a valid forum tag");
-                }
+        channel.asServerThreadChannel().flatMap(it -> it.getParent().asServerForumChannel()).ifPresent(parent -> {
+            if (forumTags.stream().anyMatch(tag -> !parent.getForumTags().contains(tag))) {
+                throw new IllegalArgumentException("The tag is not a valid forum tag");
             }
 
             this.forumTags = forumTags;
@@ -119,10 +119,9 @@ public class ServerThreadChannelUpdaterDelegateImpl extends ServerChannelUpdater
             body.put("rate_limit_per_user", delay);
             patchThread = true;
         }
-        if (forumTags != null && !forumTags.isEmpty()) {
-            for (ForumTag tag : forumTags) {
-                body.putArray("forum_tags").add(tag.getId());
-            }
+        if (forumTags != null) {
+            ArrayNode node = body.putArray("applied_tags");
+            forumTags.forEach(tag -> node.add(tag.getId()));
         }
         return patchThread;
     }

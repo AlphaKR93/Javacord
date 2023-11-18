@@ -470,8 +470,7 @@ public class ChannelUpdateHandler extends PacketHandler {
 
 
         String oldTopic = channel.getTopic().orElse(null);
-        String newTopic = jsonChannel.has("topic") && !jsonChannel.get("topic").isNull()
-                ? jsonChannel.get("topic").asText() : null;
+        String newTopic = jsonChannel.hasNonNull("topic") ? jsonChannel.get("topic").asText() : null;
         if (!Objects.equals(oldTopic, newTopic)) {
             channel.setTopic(newTopic);
 
